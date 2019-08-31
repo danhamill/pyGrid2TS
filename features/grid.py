@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 import os
 import rasterio
-import dateutil.parser as dparse
+
 
 class Grid(object):
-    def __init__(self, filepath):
+    def __init__(self, filepath, date):
         self.name = None
         self.crs = None
-        self.date = None
+        self.date = date
         self.date_fmt = None
         self.driver = None
         self.fpath = filepath
+        self.data = None
+        self.affine = None
 
         
     @staticmethod
@@ -24,14 +26,12 @@ class Grid(object):
     
     def import_grid_info(self, dtfmt = '%Y%m%d'):
         self.name = os.path.basename(self.fpath)
-        bname = os.path.basename(self.fpath)
-        self.date = dparse.parse(bname.split('.')[0],fuzzy=True)
         with rasterio.open(self.fpath) as ds:
             self.crs = ds.crs
-            self.driver = ds.driver
+            self.driver = ds.driver           
             
             
-def get_grids(fpath):
-    g = Grid(fpath)
+def get_grids(fname, date):
+    g = Grid(fname, date)
     g.import_grid_info()
     return g
