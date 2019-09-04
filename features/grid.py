@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+#author          :Daniel Hamill
+#email           :Daniel.D.Hamill@usace.army.mil
 import os
 import rasterio
 
@@ -14,7 +16,7 @@ class Grid(object):
         self.data = None
         self.affine = None
 
-        
+
     @staticmethod
     def test(filepath):
         try:
@@ -23,14 +25,14 @@ class Grid(object):
         except:
             driver = "Not Found"
         return driver
-    
+
     def import_grid_info(self, dtfmt = '%Y%m%d'):
         self.name = os.path.basename(self.fpath)
         with rasterio.open(self.fpath) as ds:
             self.crs = ds.crs
-            self.driver = ds.driver           
-            
-            
+            self.driver = ds.driver
+
+
 def get_grids(fname, date):
     g = Grid(fname, date)
     g.import_grid_info()

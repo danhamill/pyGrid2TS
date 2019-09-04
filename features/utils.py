@@ -1,9 +1,16 @@
 # -*- coding: utf-8 -*-
+#author          :Daniel Hamill
+#email           :Daniel.D.Hamill@usace.army.mil
 
 from rasterio import crs
 from datetime import datetime
 import re
 import os
+import numpy as np
+import pandas as pd
+from pydsstools.heclib.dss import HecDss
+from pydsstools.core import TimeSeriesContainer
+
 
 def test_func():
     return 'test_return'
@@ -12,14 +19,14 @@ def get_albers():
     return '+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs'
 
 def check_crs(gdf):
-    
+
     '''
     Simple function to compare projections
     '''
-    
+
     s2 = crs.CRS.from_dict(gdf.crs)
     s1 = crs.CRS.from_proj4(get_albers())
-    
+
     if s1 == s2:
         pass
     else:
@@ -37,7 +44,133 @@ def date_util(name,dtfmt):
     str2regex = {'Y':'[1-2][0-9][0-9][0-9]',
         'm':'[0-1][0-9]',
         'd':'[0-3][0-9]'}
-    
+
     regex_string = ''.join([str2regex[i] for i in parts])
     date_str = re.search(regex_string,fname)
     return datetime.strptime(date_str.group(), dtfmt)
+
+
+def zstat2dss(zs_list):
+    dates = [i.grid.date for i in zs_list]
+    sbasin_avg = [np.round(i.sbasin_avg,4) for i in zs_list]
+    sbasin_vol = [i.sbasin_vol for i in zs_list]
+    basin_avg = [np.round(i.basin_avg,4) for i in zs_list]
+    basin_vol = [i.basin_vol for i in zs_list]
+    names = [i.sbasin_names for i in zs_list]
+
+
+    date_rav = np.ravel(np.repeat(dates,5))
+    sbasin_avg_rav = np.ravel(sbasin_avg)
+    sbasin_vol_rav = np.ravel(sbasin_vol)
+    names_rav = np.ravel(names)
+
+
+    idx = pd.MultiIndex.from_tuples(zip(date_rav, names_rav), names=['date','name'])
+    sbasin = pd.DataFrame(index=idx,data={'mean_swe':sbasin_avg_rav, 'vol':sbasin_vol_rav} )
+
+    idx = pd.MultiIndex.from_tuples(zip(dates, np.ravel(np.repeat('Total_Basin',len(dates)))), names=['date','name'])
+    tbasin = pd.DataFrame(index=idx,data={'mean_swe':basin_avg, 'vol':basin_vol} )
+
+    idx = pd.date_range(sbasin.index.get_level_values(0).min(), sbasin.index.get_level_values(0).max())
+    dss_file = r"D:\souris\snodas.dss"
+
+    for name, group in sbasin.groupby(level=1):
+        #group.loc[:, 'wy'] = np.where(group.index.get_level_values(0).month>9,group.index.get_level_values(0).year+1,group.index.get_level_values(0).year)
+        group.index = group.index.droplevel(1)
+        group.index = group.index.sort_values()
+
+        group=group.reindex(idx, fill_value=0)
+
+
+        start_date =group.index.min().strftime('%d%b%Y %H:%M:%S')
+        pname = '/SOURIS/' + name.upper().replace(' ', '_') +'/AVG_SWE//1DAY/SNDOAS/'
+
+        print(pname)
+        tsc = TimeSeriesContainer()
+        tsc.granularity = 60 #seconds i.e. minute granularity
+        tsc.numberValues = group.mean_swe.size
+        tsc.startDateTime=start_date
+        tsc.pathname = pname
+        tsc.units = "M"
+        tsc.type = "INST"
+        tsc.interval = 1
+        #must a +ve integer for regular time-series
+        #actual interval implied from E part of pathname
+        tsc.values =group.mean_swe.div(1000).values
+        #values may be list,array, numpy array
+
+        fid = HecDss.Open(dss_file)
+        fid.deletePathname(tsc.pathname)
+        status = fid.put(tsc)
+        fid.close()
+
+        pname = '/SOURIS/' + name.upper().replace(' ', '_') +'/VOL//1DAY/SNODAS/'
+        print(pname)
+
+        tsc = TimeSeriesContainer()
+        tsc.granularity = 60 #seconds i.e. minute granularity
+        tsc.numberValues = group.index.size
+        tsc.startDateTime=start_date
+        tsc.pathname = pname
+        tsc.units = "CUBIC_METERS"
+        tsc.type = "INST"
+        tsc.interval = 1
+        #must a +ve integer for regular time-series
+        #actual interval implied from E part of pathname
+        tsc.values =group.vol.values
+        #values may be list,array, numpy array
+
+        fid = HecDss.Open(dss_file)
+        fid.deletePathname(tsc.pathname)
+        status = fid.put(tsc)
+        fid.close()
+    for name, group in tbasin.groupby(level=1):
+        #group.loc[:, 'wy'] = np.where(group.index.get_level_values(0).month>9,group.index.get_level_values(0).year+1,group.index.get_level_values(0).year)
+        group.index = group.index.droplevel(1)
+        group.index = group.index.sort_values()
+
+        group=group.reindex(idx, fill_value=0)
+
+        start_date =group.index.min().strftime('%d%b%Y %H:%M:%S')
+        pname = '/SOURIS/' + name.upper().replace(' ', '_') +'/AVG_SWE//1DAY/UofA/'
+
+
+        print(pname)
+        tsc = TimeSeriesContainer()
+        tsc.granularity = 60 #seconds i.e. minute granularity
+        tsc.numberValues = group.mean_swe.size
+        tsc.startDateTime=start_date
+        tsc.pathname = pname
+        tsc.units = "M"
+        tsc.type = "INST"
+        tsc.interval = 1
+        #must a +ve integer for regular time-series
+        #actual interval implied from E part of pathname
+        tsc.values =group.mean_swe.div(1000).values
+        #values may be list,array, numpy array
+
+        fid = HecDss.Open(dss_file)
+        fid.deletePathname(tsc.pathname)
+        status = fid.put(tsc)
+        fid.close()
+
+        pname = '/SOURIS/' + name.upper().replace(' ', '_') +'/VOL//1DAY/UofA/'
+        print(pname)
+
+        tsc = TimeSeriesContainer()
+        tsc.granularity = 60 #seconds i.e. minute granularity
+        tsc.numberValues = group.index.size
+        tsc.startDateTime=start_date
+        tsc.pathname = pname
+        tsc.units = "CUBIC_METERS"
+        tsc.type = "INST"
+        tsc.interval = 1
+        #must a +ve integer for regular time-series
+        #actual interval implied from E part of pathname
+        tsc.values =group.vol.values
+        #values may be list,array, numpy array
+
+        fid = HecDss.Open(dss_file)
+        fid.deletePathname(tsc.pathname)
+        status = fid.put(tsc)
+        fid.close()
