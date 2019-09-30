@@ -40,10 +40,15 @@ def date_util(name,dtfmt):
     Requires self.dtfmt to be correcly specified
     '''
     parts = dtfmt.split('%')[1:]
-    fname = '-'.join(os.path.split(name)[1].split('.')[0].split('_'))
+
+    
+    fname = ''.join(os.path.split(name)[1].split('.')[0].split('_'))
     str2regex = {'Y':'[1-2][0-9][0-9][0-9]',
         'm':'[0-1][0-9]',
-        'd':'[0-3][0-9]'}
+        'd':'[0-3][0-9]',
+        'Y-':'[1-2][0-9][0-9][0-9]-',
+        'm-':'[0-1][0-9]-',
+        'd-':'[0-3][0-9]-'}
 
     regex_string = ''.join([str2regex[i] for i in parts])
     date_str = re.search(regex_string,fname)
@@ -59,7 +64,7 @@ def zstat2dss(zs_list):
     names = [i.sbasin_names for i in zs_list]
 
 
-    date_rav = np.ravel(np.repeat(dates,5))
+    date_rav = np.ravel(np.repeat(dates,3))
     sbasin_avg_rav = np.ravel(sbasin_avg)
     sbasin_vol_rav = np.ravel(sbasin_vol)
     names_rav = np.ravel(names)
@@ -72,7 +77,10 @@ def zstat2dss(zs_list):
     tbasin = pd.DataFrame(index=idx,data={'mean_swe':basin_avg, 'vol':basin_vol} )
 
     idx = pd.date_range(sbasin.index.get_level_values(0).min(), sbasin.index.get_level_values(0).max())
-    dss_file = r"D:\souris\snodas.dss"
+    dss_file = r"E:\ririe\Ririe_SWE_data_redone.dss"
+    
+    fid = HecDss.Open(dss_file,version=6)
+    fid.close()
 
     for name, group in sbasin.groupby(level=1):
         #group.loc[:, 'wy'] = np.where(group.index.get_level_values(0).month>9,group.index.get_level_values(0).year+1,group.index.get_level_values(0).year)
@@ -81,7 +89,7 @@ def zstat2dss(zs_list):
 
         group=group.reindex(idx, fill_value=0)
 
-
+        
         start_date =group.index.min().strftime('%d%b%Y %H:%M:%S')
         pname = '/SOURIS/' + name.upper().replace(' ', '_') +'/AVG_SWE//1DAY/SNDOAS/'
 

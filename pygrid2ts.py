@@ -15,10 +15,12 @@ from features.utils import check_crs
 import rasterio
 import numpy as np
 import time
+from features.utils import zstat2dss
 
 
 class Zonal_Stat(object):
-    def __init__(self, basin_gdf, sbasin_gdf, grid, oRoot):
+    def __init__(self, basin_gdf, sbasin_gdf, grid, oRoot, ds):
+        self.ds = ds
         self.crs = None
         self.zstat = None
         self.file = None
@@ -28,10 +30,12 @@ class Zonal_Stat(object):
         self.grid = grid
         self.clip_rast_path = oRoot
         self.basin_avg = None
+        self.basin_dates = []
         self.sbasin_avg = []
         self.basin_vol = None
         self.sbasin_vol = []
         self.sbasin_names = []
+        self.sbasin_dates = []
 
     @staticmethod
     def test(gdf, grid):
@@ -49,8 +53,14 @@ class Zonal_Stat(object):
 
         zs = zonal_stats(self.basin_gdf, self.grid.fpath, raster_out=True)
         stuff = zs[0]
+        
+        try: 
+            os.makedirs(self.clip_rast_path + os.sep + 'Total_Watershed' + os.sep + self.ds)
+        except:
+            pass
+        
         try:
-            with rasterio.open(self.clip_rast_path + os.sep + 'Total-basin-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
+            with rasterio.open(self.clip_rast_path + os.sep + 'Total_Watershed' + os.sep + self.ds + os.sep + 'Total-basin-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
                                    height = stuff['mini_raster_array'].shape[0], width = stuff['mini_raster_array'].shape[1],
                                    dtype=rasterio.dtypes.int16,
                                    crs=self.grid.crs.to_proj4(), count = 1, transform=stuff['mini_raster_affine']) as dst:
@@ -58,7 +68,7 @@ class Zonal_Stat(object):
                         dst.nodata = -9999
         except:
             time.sleep(1)
-            with rasterio.open(self.clip_rast_path + os.sep + 'Total-basin-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
+            with rasterio.open(self.clip_rast_path + os.sep + 'Total_Watershed' + os.sep + self.ds + os.sep + 'Total-basin-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
                                    height = stuff['mini_raster_array'].shape[0], width = stuff['mini_raster_array'].shape[1],
                                    dtype=rasterio.dtypes.int16,
                                    crs=self.grid.crs.to_proj4(), count = 1, transform=stuff['mini_raster_affine']) as dst:
@@ -68,24 +78,41 @@ class Zonal_Stat(object):
         self.grid.affine = stuff['mini_raster_affine']
         self.basin_avg = self.grid.data.mean()/1000
         self.basin_vol = self.grid.data.filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/1000
+        self.basin_dates.append(self.grid.date)
 
     def get_sbasin_stats(self):
         assert self.sbasin_gdf.columns.contains('name'), "No Name field in subbasin shapefile"
         zs = zonal_stats(self.sbasin_gdf, self.grid.data, affine = self.grid.affine, raster_out=True,nodata=-9999, all_touched=False)
-        for item, name  in zip(zs,self.sbasin_gdf.name.tolist()):
+        for item, name  in zip(zs,self.sbasin_gdf.name.str.replace(' ' , '-').tolist()):
             self.sbasin_names.append(name)
             self.sbasin_avg.append(item['mean']/1000)
             vol = item['mini_raster_array'].astype('int16').filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/1000
             self.sbasin_vol.append(vol)
-            with rasterio.open(self.clip_rast_path + os.sep + name +'-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
-                               height = item['mini_raster_array'].shape[0], width = item['mini_raster_array'].shape[1],
-                               dtype=rasterio.dtypes.int16,
-                               crs=self.grid.crs.to_proj4(), count = 1, transform=item['mini_raster_affine']) as dst:
-                    dst.write(item['mini_raster_array'].astype('int16').filled(-9999),1)
-                    dst.nodata = -9999
+            self.sbasin_dates.append(self.grid.date)
+            
+            try:
+                os.makedirs(self.clip_rast_path + os.sep + name.replace(' ' , '-') + os.sep + self.ds)
+            except:
+                pass
+            try:
+                
+                with rasterio.open(self.clip_rast_path + os.sep + name + os.sep + self.ds + os.sep + name +'-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
+                                   height = item['mini_raster_array'].shape[0], width = item['mini_raster_array'].shape[1],
+                                   dtype=rasterio.dtypes.int16,
+                                   crs=self.grid.crs.to_proj4(), count = 1, transform=item['mini_raster_affine']) as dst:
+                        dst.write(item['mini_raster_array'].astype('int16').filled(-9999),1)
+                        dst.nodata = -9999
+            except:
+                time.sleep(1)
+                with rasterio.open(self.clip_rast_path + os.sep + name + os.sep + self.ds + os.sep + name +'-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
+                                   height = item['mini_raster_array'].shape[0], width = item['mini_raster_array'].shape[1],
+                                   dtype=rasterio.dtypes.int16,
+                                   crs=self.grid.crs.to_proj4(), count = 1, transform=item['mini_raster_affine']) as dst:
+                        dst.write(item['mini_raster_array'].astype('int16').filled(-9999),1)
+                        dst.nodata = -9999               
 
-def get_zs(basin_gdf, sbasin_gdf, grid, oRoot):
-    zs = Zonal_Stat(basin_gdf, sbasin_gdf, grid, oRoot)
+def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds):
+    zs = Zonal_Stat(basin_gdf, sbasin_gdf, grid, oRoot,ds)
     zs.get_basin_raster()
     zs.get_sbasin_stats()
     return zs
@@ -98,33 +125,34 @@ def main():
 ##
 #    files = files1 + files2
 
-    files = glob(r"D:\snodas\*.tif")
+    files = glob(r"E:\ririe\rasters\uofa_alb\*.tif")
 
-    ts = ParseTS(files,'%Y%m%d', month_start=9, month_end=6)
+    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
 
     glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
 
 
-    basin_gdf = gpd.read_file(r"D:\souris\shp\Darling_dissolved.shp")
+
+    basin_gdf = gpd.read_file(r"E:/ririe/shp/total_watershed_dissolved.shp")
     basin_gdf = check_crs(basin_gdf)
     basin_gdf.columns = basin_gdf.columns.str.lower()
 
-    sbasin_gdf = gpd.read_file(r"D:\souris\shp\Darling_DAGrouping.shp")
+    sbasin_gdf = gpd.read_file(r"E:\ririe\shp\total_watershed.shp")
     sbasin_gdf = check_crs(sbasin_gdf)
     sbasin_gdf.columns = sbasin_gdf.columns.str.lower()
 
-
-    oRoot = r"D:\souris\rasters\Total_Watershed"
-    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot) for grid in glist)
+    ds = 'UofA'
+    oRoot = r"E:\ririe\rasters"
+    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds) for grid in glist)
 
 #    zs_list = []
-#    for grid in glist[30:31]:
+#    for grid in glist[4864:4865]:
 #        print(grid.date)
-#        zs = Zonal_Stat(basin_gdf, sbasin_gdf, grid, oRoot)
+#        zs = Zonal_Stat(basin_gdf, sbasin_gdf, grid, oRoot,ds)
 #        zs.get_basin_raster()
 #        zs.get_sbasin_stats()
 #        zs_list.append(zs)
-
+    zstat2dss(zs_list)
 
 
 if __name__ == '__main__':
