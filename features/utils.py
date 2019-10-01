@@ -55,7 +55,7 @@ def date_util(name,dtfmt):
     return datetime.strptime(date_str.group(), dtfmt)
 
 
-def zstat2dss(zs_list):
+def zstat2dss(zs_list, basin, ds):
     dates = [i.grid.date for i in zs_list]
     sbasin_avg = [np.round(i.sbasin_avg,4) for i in zs_list]
     sbasin_vol = [i.sbasin_vol for i in zs_list]
@@ -64,7 +64,7 @@ def zstat2dss(zs_list):
     names = [i.sbasin_names for i in zs_list]
 
 
-    date_rav = np.ravel(np.repeat(dates,3))
+    date_rav = np.ravel(np.repeat(dates,len(zs_list[0].sbasin_names)))
     sbasin_avg_rav = np.ravel(sbasin_avg)
     sbasin_vol_rav = np.ravel(sbasin_vol)
     names_rav = np.ravel(names)
@@ -72,12 +72,14 @@ def zstat2dss(zs_list):
 
     idx = pd.MultiIndex.from_tuples(zip(date_rav, names_rav), names=['date','name'])
     sbasin = pd.DataFrame(index=idx,data={'mean_swe':sbasin_avg_rav, 'vol':sbasin_vol_rav} )
+    sbasin = sbasin.sort_index(level=0)
 
     idx = pd.MultiIndex.from_tuples(zip(dates, np.ravel(np.repeat('Total_Basin',len(dates)))), names=['date','name'])
     tbasin = pd.DataFrame(index=idx,data={'mean_swe':basin_avg, 'vol':basin_vol} )
+    tbasin = tbasin.sort_index(level=0)
 
     idx = pd.date_range(sbasin.index.get_level_values(0).min(), sbasin.index.get_level_values(0).max())
-    dss_file = r"E:\ririe\Ririe_SWE_data_redone.dss"
+    dss_file = r"E:\ririe\compare.dss"
     
     fid = HecDss.Open(dss_file,version=6)
     fid.close()
@@ -91,7 +93,7 @@ def zstat2dss(zs_list):
 
         
         start_date =group.index.min().strftime('%d%b%Y %H:%M:%S')
-        pname = '/SOURIS/' + name.upper().replace(' ', '_') +'/AVG_SWE//1DAY/SNDOAS/'
+        pname = '/{0}/{1}/AVG_SWE//1DAY/{2}/'.format(basin,name.upper().replace(' ', '_'), ds)
 
         print(pname)
         tsc = TimeSeriesContainer()
@@ -104,7 +106,7 @@ def zstat2dss(zs_list):
         tsc.interval = 1
         #must a +ve integer for regular time-series
         #actual interval implied from E part of pathname
-        tsc.values =group.mean_swe.div(1000).values
+        tsc.values =group.mean_swe.values
         #values may be list,array, numpy array
 
         fid = HecDss.Open(dss_file)
@@ -112,7 +114,7 @@ def zstat2dss(zs_list):
         status = fid.put(tsc)
         fid.close()
 
-        pname = '/SOURIS/' + name.upper().replace(' ', '_') +'/VOL//1DAY/SNODAS/'
+        pname = '/{0}/{1}/VOL//1DAY/{2}/'.format(basin,name.upper().replace(' ', '_'), ds)
         print(pname)
 
         tsc = TimeSeriesContainer()
@@ -133,14 +135,16 @@ def zstat2dss(zs_list):
         status = fid.put(tsc)
         fid.close()
     for name, group in tbasin.groupby(level=1):
+        
         #group.loc[:, 'wy'] = np.where(group.index.get_level_values(0).month>9,group.index.get_level_values(0).year+1,group.index.get_level_values(0).year)
+
         group.index = group.index.droplevel(1)
         group.index = group.index.sort_values()
 
         group=group.reindex(idx, fill_value=0)
 
         start_date =group.index.min().strftime('%d%b%Y %H:%M:%S')
-        pname = '/SOURIS/' + name.upper().replace(' ', '_') +'/AVG_SWE//1DAY/UofA/'
+        pname = '/{0}/{1}/AVG_SWE//1DAY/{2}/'.format(basin,name.upper().replace(' ', '_'), ds)
 
 
         print(pname)
@@ -154,7 +158,7 @@ def zstat2dss(zs_list):
         tsc.interval = 1
         #must a +ve integer for regular time-series
         #actual interval implied from E part of pathname
-        tsc.values =group.mean_swe.div(1000).values
+        tsc.values =group.mean_swe.values
         #values may be list,array, numpy array
 
         fid = HecDss.Open(dss_file)
@@ -162,7 +166,7 @@ def zstat2dss(zs_list):
         status = fid.put(tsc)
         fid.close()
 
-        pname = '/SOURIS/' + name.upper().replace(' ', '_') +'/VOL//1DAY/UofA/'
+        pname = '/{0}/{1}/VOL//1DAY/{2}/'.format(basin,name.upper().replace(' ', '_'), ds)
         print(pname)
 
         tsc = TimeSeriesContainer()
@@ -182,3 +186,4 @@ def zstat2dss(zs_list):
         fid.deletePathname(tsc.pathname)
         status = fid.put(tsc)
         fid.close()
+    return sbasin, tbasin
