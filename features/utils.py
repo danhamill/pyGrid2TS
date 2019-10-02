@@ -102,7 +102,7 @@ def zstat2dss(zs_list, basin, ds):
         tsc.startDateTime=start_date
         tsc.pathname = pname
         tsc.units = "M"
-        tsc.type = "INST"
+        tsc.type = "INST-VAL"
         tsc.interval = 1
         #must a +ve integer for regular time-series
         #actual interval implied from E part of pathname
@@ -123,7 +123,7 @@ def zstat2dss(zs_list, basin, ds):
         tsc.startDateTime=start_date
         tsc.pathname = pname
         tsc.units = "CUBIC_METERS"
-        tsc.type = "INST"
+        tsc.type = "INST-VAL"
         tsc.interval = 1
         #must a +ve integer for regular time-series
         #actual interval implied from E part of pathname
@@ -154,7 +154,7 @@ def zstat2dss(zs_list, basin, ds):
         tsc.startDateTime=start_date
         tsc.pathname = pname
         tsc.units = "M"
-        tsc.type = "INST"
+        tsc.type = "INST-VAL"
         tsc.interval = 1
         #must a +ve integer for regular time-series
         #actual interval implied from E part of pathname
@@ -175,7 +175,7 @@ def zstat2dss(zs_list, basin, ds):
         tsc.startDateTime=start_date
         tsc.pathname = pname
         tsc.units = "CUBIC_METERS"
-        tsc.type = "INST"
+        tsc.type = "INST-VAL"
         tsc.interval = 1
         #must a +ve integer for regular time-series
         #actual interval implied from E part of pathname
