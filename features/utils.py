@@ -55,7 +55,7 @@ def date_util(name,dtfmt):
     return datetime.strptime(date_str.group(), dtfmt)
 
 
-def zstat2dss(zs_list, basin, ds):
+def zstat2dss(zs_list, basin, ds, dss_file):
     dates = [i.grid.date for i in zs_list]
     sbasin_avg = [np.round(i.sbasin_avg,4) for i in zs_list]
     sbasin_vol = [i.sbasin_vol for i in zs_list]
@@ -79,7 +79,7 @@ def zstat2dss(zs_list, basin, ds):
     tbasin = tbasin.sort_index(level=0)
 
     idx = pd.date_range(sbasin.index.get_level_values(0).min(), sbasin.index.get_level_values(0).max())
-    dss_file = r"E:\ririe\compare.dss"
+    
     
     fid = HecDss.Open(dss_file,version=6)
     fid.close()

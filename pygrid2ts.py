@@ -20,7 +20,7 @@ import pandas as pd
 
 
 class Zonal_Stat(object):
-    def __init__(self, basin_gdf, sbasin_gdf, grid, oRoot, ds, basin):
+    def __init__(self, basin_gdf, sbasin_gdf, grid, oRoot, ds, basin, m_conv):
         self.basin = basin
         self.ds = ds
         self.crs = None
@@ -38,6 +38,7 @@ class Zonal_Stat(object):
         self.sbasin_vol = []
         self.sbasin_names = []
         self.sbasin_dates = []
+        self.m_conv = m_conv
 
     @staticmethod
     def test(gdf, grid):
@@ -78,8 +79,8 @@ class Zonal_Stat(object):
                         dst.nodata = -9999
         self.grid.data = stuff['mini_raster_array'].astype('int16')
         self.grid.affine = stuff['mini_raster_affine']
-        self.basin_avg = stuff['mini_raster_array'].astype('int16').mean()/1000
-        self.basin_vol = self.grid.data.filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/1000
+        self.basin_avg = stuff['mini_raster_array'].astype('int16').mean()/self.m_conv
+        self.basin_vol = self.grid.data.filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/self.m_conv
         self.basin_dates.append(self.grid.date)
 
     def get_sbasin_stats(self):
@@ -87,8 +88,8 @@ class Zonal_Stat(object):
         zs = zonal_stats(self.sbasin_gdf, self.grid.data, affine = self.grid.affine, raster_out=True,nodata=-9999, all_touched=False)
         for item, name  in zip(zs,self.sbasin_gdf.name.str.replace(' ' , '-').tolist()):
             self.sbasin_names.append(name)
-            self.sbasin_avg.append(item['mean']/1000)
-            vol = item['mini_raster_array'].astype('int16').filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/1000
+            self.sbasin_avg.append(item['mean']/self.m_conv)
+            vol = item['mini_raster_array'].astype('int16').filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/self.m_conv
             self.sbasin_vol.append(vol)
             self.sbasin_dates.append(self.grid.date)
             
@@ -113,8 +114,8 @@ class Zonal_Stat(object):
                         dst.write(item['mini_raster_array'].astype('int16').filled(-9999),1)
                         dst.nodata = -9999               
 
-def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin):
-    zs = Zonal_Stat(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin)
+def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv):
+    zs = Zonal_Stat(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv)
     zs.get_basin_raster()
     zs.get_sbasin_stats()
     return zs
@@ -136,14 +137,15 @@ def main():
     sbasin_gdf.columns = sbasin_gdf.columns.str.lower()
     #sbasin_gdf.loc[:,'Name'] = ['Total_Watershed_as_sbasin']
     
+    dss_file = r"E:\ririe\compare.dss"    
     
     ds = 'UofA'
     files = glob(r"E:\ririe\rasters\uofa_alb\*.tif")
     
     ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
     glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
-    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin) for grid in glist)
-    uofa_sbasin, uofa_tbasin =zstat2dss(zs_list, basin, ds)    
+    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
+    uofa_sbasin, uofa_tbasin =zstat2dss(zs_list, basin, ds,dss_file)    
 
 #    #checking area
 #    zs = zs_list[40]
@@ -158,8 +160,16 @@ def main():
     
     ts = ParseTS(files,'%Y%m%d', month_start=9, month_end=6)
     glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
-    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin) for grid in glist)
-    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds)    
+    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
+    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds, dss_file)    
+    
+    ds = 'SNOTEL_IDW'
+    files = glob(r'E:\ririe\rasters\SNOTEL_GRIDS\IDW\*.tif')
+    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
+    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
+    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1) for grid in glist)
+    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds, dss_file)    
+
     
 #    ua_sbasin_ann_max = uofa_sbasin.reset_index(level=1).groupby([pd.Grouper(level=0, freq='Y'),'name']).max()
 #    ua_tbasin_ann_max = uofa_tbasin.reset_index(level=1).groupby([pd.Grouper(level=0, freq='Y'),'name']).max()
