@@ -57,6 +57,18 @@ class Zonal_Stat(object):
         zs = zonal_stats(self.basin_gdf, self.grid.fpath, raster_out=True)
         stuff = zs[0]
         
+        raster_dtype = stuff['mini_raster_array'].dtype
+        
+        if np.float32  == stuff['mini_raster_array'].dtype:
+            raster_dtype = rasterio.dtypes.float32
+            array_dtype = 'float32'
+        elif np.int16 == stuff['mini_raster_array'].dtype:
+            raster_dtype = rasterio.dtypes.int16
+            array_dtype = 'int16'
+        elif np.float64 == stuff['mini_raster_array'].dtype:
+            raster_dtype = rasterio.dtypes.float32
+            array_dtype = 'float32'    
+        
         try: 
             os.makedirs(self.clip_rast_path + os.sep + 'Total_Watershed' + os.sep + self.ds)
         except:
@@ -65,31 +77,45 @@ class Zonal_Stat(object):
         try:
             with rasterio.open(self.clip_rast_path + os.sep + 'Total_Watershed' + os.sep + self.ds + os.sep + 'Total-basin-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
                                    height = stuff['mini_raster_array'].shape[0], width = stuff['mini_raster_array'].shape[1],
-                                   dtype=rasterio.dtypes.int16,
+                                   dtype=raster_dtype,
                                    crs=self.grid.crs.to_proj4(), count = 1, transform=stuff['mini_raster_affine']) as dst:
-                        dst.write(stuff['mini_raster_array'].astype('int16').filled(-9999),1)
+                        dst.write(stuff['mini_raster_array'].astype(array_dtype).filled(-9999),1)
                         dst.nodata = -9999
         except:
             time.sleep(0.5)
             with rasterio.open(self.clip_rast_path + os.sep + 'Total_Watershed' + os.sep + self.ds + os.sep + 'Total-basin-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
                                    height = stuff['mini_raster_array'].shape[0], width = stuff['mini_raster_array'].shape[1],
-                                   dtype=rasterio.dtypes.int16,
+                                   dtype=raster_dtype,
                                    crs=self.grid.crs.to_proj4(), count = 1, transform=stuff['mini_raster_affine']) as dst:
-                        dst.write(stuff['mini_raster_array'].astype('int16').filled(-9999),1)
+                        dst.write(stuff['mini_raster_array'].astype(array_dtype).filled(-9999),1)
                         dst.nodata = -9999
-        self.grid.data = stuff['mini_raster_array'].astype('int16')
+        self.grid.data = stuff['mini_raster_array'].astype(array_dtype)
         self.grid.affine = stuff['mini_raster_affine']
-        self.basin_avg = stuff['mini_raster_array'].astype('int16').mean()/self.m_conv
+        self.basin_avg = stuff['mini_raster_array'].astype(array_dtype).mean()/self.m_conv
         self.basin_vol = self.grid.data.filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/self.m_conv
         self.basin_dates.append(self.grid.date)
 
     def get_sbasin_stats(self):
         assert self.sbasin_gdf.columns.contains('name'), "No Name field in subbasin shapefile"
         zs = zonal_stats(self.sbasin_gdf, self.grid.data, affine = self.grid.affine, raster_out=True,nodata=-9999, all_touched=False)
+        
+        stuff = zs[0]
+        raster_dtype = stuff['mini_raster_array'].dtype
+        if np.float32  == stuff['mini_raster_array'].dtype:
+            raster_dtype = rasterio.dtypes.float32
+            array_dtype = 'float32'
+        elif np.int16 == stuff['mini_raster_array'].dtype:
+            raster_dtype = rasterio.dtypes.int16
+            array_dtype = 'int16'
+        elif np.float64 == stuff['mini_raster_array'].dtype:
+            raster_dtype = rasterio.dtypes.float32
+            array_dtype = 'float32'    
+        del stuff
+            
         for item, name  in zip(zs,self.sbasin_gdf.name.str.replace(' ' , '-').tolist()):
             self.sbasin_names.append(name)
             self.sbasin_avg.append(item['mean']/self.m_conv)
-            vol = item['mini_raster_array'].astype('int16').filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/self.m_conv
+            vol = item['mini_raster_array'].astype(array_dtype).filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/self.m_conv
             self.sbasin_vol.append(vol)
             self.sbasin_dates.append(self.grid.date)
             
@@ -101,17 +127,17 @@ class Zonal_Stat(object):
                 
                 with rasterio.open(self.clip_rast_path + os.sep + name + os.sep + self.ds + os.sep + name +'-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
                                    height = item['mini_raster_array'].shape[0], width = item['mini_raster_array'].shape[1],
-                                   dtype=rasterio.dtypes.int16,
+                                   dtype=raster_dtype,
                                    crs=self.grid.crs.to_proj4(), count = 1, transform=item['mini_raster_affine']) as dst:
-                        dst.write(item['mini_raster_array'].astype('int16').filled(-9999),1)
+                        dst.write(item['mini_raster_array'].astype(array_dtype).filled(-9999),1)
                         dst.nodata = -9999
             except:
                 time.sleep(0.5)
                 with rasterio.open(self.clip_rast_path + os.sep + name + os.sep + self.ds + os.sep + name +'-' + self.grid.date.strftime('%Y-%m-%d') + '.tif', 'w',driver='GTiff',
                                    height = item['mini_raster_array'].shape[0], width = item['mini_raster_array'].shape[1],
-                                   dtype=rasterio.dtypes.int16,
+                                   dtype=raster_dtype,
                                    crs=self.grid.crs.to_proj4(), count = 1, transform=item['mini_raster_affine']) as dst:
-                        dst.write(item['mini_raster_array'].astype('int16').filled(-9999),1)
+                        dst.write(item['mini_raster_array'].astype(array_dtype).filled(-9999),1)
                         dst.nodata = -9999               
 
 def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv):
@@ -147,12 +173,12 @@ def main():
     zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
     uofa_sbasin, uofa_tbasin =zstat2dss(zs_list, basin, ds,dss_file)    
 
-#    #checking area
-#    zs = zs_list[40]
-#    shp1 = gpd.read_file(r"E:\ririe\shp\total_watershed.shp")
-#    shp1 = shp1.to_crs(sbasin_gdf.crs)
-#    all_shp = gpd.GeoDataFrame(pd.concat([sbasin_gdf, shp1], ignore_index=True))
-#    tmp = zonal_stats(all_shp, zs.grid.data, affine =zs.grid.affine, raster_out=True, nodata=-9999, stats=['mean','count','sum'])
+    #checking area
+    zs = zs_list[2324]
+    shp1 = gpd.read_file(r"E:\ririe\shp\total_watershed.shp")
+    shp1 = shp1.to_crs(sbasin_gdf.crs)
+    all_shp = gpd.GeoDataFrame(pd.concat([sbasin_gdf, shp1], ignore_index=True))
+    tmp = zonal_stats(all_shp, zs.grid.data, affine =zs.grid.affine, raster_out=True, nodata=-9999, stats=['mean','count','sum'])
       
     
     ds = 'SNODAS'    
