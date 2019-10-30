@@ -38,7 +38,7 @@ class Zonal_Stat(object):
         self.sbasin_vol = []
         self.sbasin_names = []
         self.sbasin_dates = []
-        self.m_conv = m_conv
+        self.m_conv = float(m_conv)
 
     @staticmethod
     def test(gdf, grid):
@@ -100,6 +100,7 @@ class Zonal_Stat(object):
         zs = zonal_stats(self.sbasin_gdf, self.grid.data, affine = self.grid.affine, raster_out=True,nodata=-9999, all_touched=False)
         
         stuff = zs[0]
+        print (stuff)
         raster_dtype = stuff['mini_raster_array'].dtype
         if np.float32  == stuff['mini_raster_array'].dtype:
             raster_dtype = rasterio.dtypes.float32
@@ -114,7 +115,10 @@ class Zonal_Stat(object):
             
         for item, name  in zip(zs,self.sbasin_gdf.name.str.replace(' ' , '-').tolist()):
             self.sbasin_names.append(name)
-            self.sbasin_avg.append(item['mean']/self.m_conv)
+            if item['mean'] is None :
+                self.sbasin_avg.append(0)
+            else:
+                self.sbasin_avg.append(item['mean']/self.m_conv)
             vol = item['mini_raster_array'].astype(array_dtype).filled(0).sum()*self.grid.affine[0]*self.grid.affine[0]/self.m_conv
             self.sbasin_vol.append(vol)
             self.sbasin_dates.append(self.grid.date)
@@ -140,7 +144,7 @@ class Zonal_Stat(object):
                         dst.write(item['mini_raster_array'].astype(array_dtype).filled(-9999),1)
                         dst.nodata = -9999               
 
-def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv):
+def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv=1):
     zs = Zonal_Stat(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv)
     zs.get_basin_raster()
     zs.get_sbasin_stats()
@@ -194,8 +198,14 @@ def main():
     ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
     glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
     zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1) for grid in glist)
-    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds, dss_file)    
-
+    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds+'_grid_res', dss_file)    
+    
+    
+    for grid in glist:
+        break
+        a = get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1)
+        
+    
     
 #    ua_sbasin_ann_max = uofa_sbasin.reset_index(level=1).groupby([pd.Grouper(level=0, freq='Y'),'name']).max()
 #    ua_tbasin_ann_max = uofa_tbasin.reset_index(level=1).groupby([pd.Grouper(level=0, freq='Y'),'name']).max()
