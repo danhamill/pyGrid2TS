@@ -65,6 +65,9 @@ class Zonal_Stat(object):
         elif np.int16 == stuff['mini_raster_array'].dtype:
             raster_dtype = rasterio.dtypes.int16
             array_dtype = 'int16'
+        elif np.int64 == stuff['mini_raster_array'].dtype:
+            raster_dtype = rasterio.dtypes.int16
+            array_dtype = 'int16'
         elif np.float64 == stuff['mini_raster_array'].dtype:
             raster_dtype = rasterio.dtypes.float32
             array_dtype = 'float32'    
@@ -101,16 +104,18 @@ class Zonal_Stat(object):
         
         stuff = zs[0]
         print (stuff)
-        raster_dtype = stuff['mini_raster_array'].dtype
         if np.float32  == stuff['mini_raster_array'].dtype:
             raster_dtype = rasterio.dtypes.float32
             array_dtype = 'float32'
         elif np.int16 == stuff['mini_raster_array'].dtype:
             raster_dtype = rasterio.dtypes.int16
             array_dtype = 'int16'
+        elif np.int64 == stuff['mini_raster_array'].dtype:
+            raster_dtype = rasterio.dtypes.int16
+            array_dtype = 'int16'
         elif np.float64 == stuff['mini_raster_array'].dtype:
             raster_dtype = rasterio.dtypes.float32
-            array_dtype = 'float32'    
+            array_dtype = 'float32'      
         del stuff
             
         for item, name  in zip(zs,self.sbasin_gdf.name.str.replace(' ' , '-').tolist()):
@@ -155,57 +160,64 @@ def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv=1):
 def main():
 
     basin = 'RIRIE'
-    oRoot = r"E:\ririe\rasters\testing"
+    oRoot = r"E:\ririe\rasters\swe_elev_bands"
 
     
     basin_gdf = gpd.read_file(r"E:/ririe/shp/total_watershed_dissolved.shp")
     basin_gdf = check_crs(basin_gdf)
     basin_gdf.columns = basin_gdf.columns.str.lower()
 
-    sbasin_gdf = gpd.read_file(r"E:\ririe\shp\total_watershed.shp")
+    sbasin_gdf = gpd.read_file(r"E:\ririe\shp\elevation_countours.shp")
     sbasin_gdf = check_crs(sbasin_gdf)
     sbasin_gdf.columns = sbasin_gdf.columns.str.lower()
     #sbasin_gdf.loc[:,'Name'] = ['Total_Watershed_as_sbasin']
     
-    dss_file = r"E:\ririe\compare.dss"    
+    dss_file = r"E:\ririe\swe_elevation_bands.dss"    
     
     ds = 'UofA'
-    files = glob(r"E:\ririe\rasters\uofa_alb\*.tif")
+    files = glob(r"E:\ririe\rasters\testing\Total_Watershed\UofA\*.tif")
     
     ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
     glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
     zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
     uofa_sbasin, uofa_tbasin =zstat2dss(zs_list, basin, ds,dss_file)    
 
-    #checking area
-    zs = zs_list[2324]
-    shp1 = gpd.read_file(r"E:\ririe\shp\total_watershed.shp")
-    shp1 = shp1.to_crs(sbasin_gdf.crs)
-    all_shp = gpd.GeoDataFrame(pd.concat([sbasin_gdf, shp1], ignore_index=True))
-    tmp = zonal_stats(all_shp, zs.grid.data, affine =zs.grid.affine, raster_out=True, nodata=-9999, stats=['mean','count','sum'])
-      
-    
-    ds = 'SNODAS'    
-    files = glob(r"E:\snodas\*.tif")
-    
-    ts = ParseTS(files,'%Y%m%d', month_start=9, month_end=6)
-    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
-    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
-    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds, dss_file)    
-    
-    ds = 'SNOTEL_IDW'
-    files = glob(r'E:\ririe\rasters\SNOTEL_GRIDS\IDW\*.tif')
-    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
-    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
-    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1) for grid in glist)
-    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds+'_grid_res', dss_file)    
+#    #checking area
+#    zs = zs_list[2324]
+#    shp1 = gpd.read_file(r"E:\ririe\shp\total_watershed.shp")
+#    shp1 = shp1.to_crs(sbasin_gdf.crs)
+#    all_shp = gpd.GeoDataFrame(pd.concat([sbasin_gdf, shp1], ignore_index=True))
+#    tmp = zonal_stats(all_shp, zs.grid.data, affine =zs.grid.affine, raster_out=True, nodata=-9999, stats=['mean','count','sum'])
+#      
+#    
+#    ds = 'SNODAS'    
+#    files = glob(r"E:\ririe\rasters\testing\Total_Watershed\SNODAS\*.tif")
+#    
+#    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
+#    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
+#    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
+#    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds, dss_file)    
+#    
+#    ds = 'SNOTEL_IDW'
+#    files = glob(r'E:\ririe\rasters\testing\Total_Watershed\SNOTEL_IDW\*.tif')
+#    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
+#    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
+#    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1) for grid in glist)
+#    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds+'_grid_res', dss_file)    
+#    
+#    ds = 'SNOTEL_IDW_5000'
+#    files = glob(r'E:\ririe\rasters\SNOTEL_GRIDS\IDW_5000\*.tif')
+#    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
+#    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
+#    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1) for grid in glist)
+#    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds+'_grid_res', dss_file)    
     
     
     for grid in glist:
         break
-        a = get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1)
-        
-    
+        a = get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e-3)
+#        
+
     
 #    ua_sbasin_ann_max = uofa_sbasin.reset_index(level=1).groupby([pd.Grouper(level=0, freq='Y'),'name']).max()
 #    ua_tbasin_ann_max = uofa_tbasin.reset_index(level=1).groupby([pd.Grouper(level=0, freq='Y'),'name']).max()
