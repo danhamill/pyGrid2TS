@@ -182,7 +182,7 @@ def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv=1):
 
 
 
-def main():
+def main(basin_shp,sbasin_shp,ds,dss_file,oRoot,basin, dtfmt, m_conv):
 
 
 
