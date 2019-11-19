@@ -1,4 +1,4 @@
-features/__pycache__/*.pyc
+features\__pycache__\*.pyc
 .spyproject
 *.pyc
 .idea/
