@@ -314,12 +314,12 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(argv,"ha:b:c:d:e:f:g:j:i:")
     except getopt.GetoptError:
-        print('python pygrid2ts.py -b basin_shapefile -s subbasin_shapefile -ds datasource -f raster_dir -dss dss_file_path -o outut_raster_directory -bn basin_name -dt dtfmt -mconv meter_conversion')
+        print('python pygrid2ts.py -a basin_shapefile -b subbasin_shapefile -c datasource -d raster_dir -e dss_file_path -f outut_raster_directory -g basin_name -j dtfmt -i meter_conversion')
         sys.exit(2)
 
     for opt, arg in opts:
         if opt == '-h':
-            print(r'Example usage:python pygrid2ts.py -a "E:\ririe\shp\total_watershed_dissolved.shp" -b "E:\ririe\shp\total_watershed.shp" -c SNODAS -d "E:\snodas" -e "E:\ririe\NEW_ELEV.dss"            -f "E:\ririe\beta" -g RIRIE -j "%Y%m%d" -i 1e3')
+            print(r'Example usage:python pygrid2ts.py -a "E:\ririe\shp\total_watershed_dissolved.shp" -b "E:\ririe\shp\total_watershed.shp" -c SNODAS -d "E:\snodas" -e "E:\ririe\NEW_ELEV.dss" -f "E:\ririe\beta" -g RIRIE -j "%Y%m%d" -i 1000')
             sys.exit()
         elif opt in ("-a"):
             basin_shp = arg
