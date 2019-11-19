@@ -41,7 +41,7 @@ def date_util(name,dtfmt):
     '''
     parts = dtfmt.split('%')[1:]
 
-    
+
     fname = ''.join(os.path.split(name)[1].split('.')[0].split('_'))
     str2regex = {'Y':'[1-2][0-9][0-9][0-9]',
         'm':'[0-1][0-9]',
@@ -79,8 +79,8 @@ def zstat2dss(zs_list, basin, ds, dss_file):
     tbasin = tbasin.sort_index(level=0)
 
     idx = pd.date_range(sbasin.index.get_level_values(0).min(), sbasin.index.get_level_values(0).max())
-    
-    
+
+
     fid = HecDss.Open(dss_file,version=6)
     fid.close()
 
@@ -88,13 +88,11 @@ def zstat2dss(zs_list, basin, ds, dss_file):
 
         #group.loc[:, 'wy'] = np.where(group.index.get_level_values(0).month>9,group.index.get_level_values(0).year+1,group.index.get_level_values(0).year)
         group.index = group.index.droplevel(1)
-        
-        
-        group.index = group.index.sort_values()
 
+        #group.index = group.index.sort_values()
         group=group.reindex(idx, fill_value=-901.0)
         group.index = group.index + pd.DateOffset(hours=12)
-        
+
         start_date =group.index.min().strftime('%d%b%Y %H:%M:%S')
         print(start_date)
         pname = '/{0}/{1}/AVG_SWE//1DAY/{2}/'.format(basin,name.upper().replace(' ', '_'), ds)
@@ -138,12 +136,12 @@ def zstat2dss(zs_list, basin, ds, dss_file):
         fid.deletePathname(tsc.pathname)
         status = fid.put(tsc)
         fid.close()
-        
+
     for name, group in tbasin.groupby(level=1):
         #group.loc[:, 'wy'] = np.where(group.index.get_level_values(0).month>9,group.index.get_level_values(0).year+1,group.index.get_level_values(0).year)
         group.index = group.index.droplevel(1)
-    
-        group.index = group.index.sort_values()
+
+        #group.index = group.index.sort_values()
 
         group=group.reindex(idx, fill_value=-901.0)
         group.index = group.index + pd.DateOffset(hours=12)
