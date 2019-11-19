@@ -160,19 +160,19 @@ def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv=1):
 def main():
 
     basin = 'RIRIE'
-    oRoot = r"E:\ririe\rasters\swe_elev_bands"
+    oRoot = r"E:\ririe\rasters\new_elev"
 
     
     basin_gdf = gpd.read_file(r"E:/ririe/shp/total_watershed_dissolved.shp")
     basin_gdf = check_crs(basin_gdf)
     basin_gdf.columns = basin_gdf.columns.str.lower()
 
-    sbasin_gdf = gpd.read_file(r"E:\ririe\shp\elevation_countours.shp")
+    sbasin_gdf = gpd.read_file(r"E:\ririe\shp\total_watershed.shp")
     sbasin_gdf = check_crs(sbasin_gdf)
     sbasin_gdf.columns = sbasin_gdf.columns.str.lower()
     #sbasin_gdf.loc[:,'Name'] = ['Total_Watershed_as_sbasin']
     
-    dss_file = r"E:\ririe\swe_elevation_bands.dss"    
+    dss_file = r"E:\ririe\NEW_ELEV.dss"   
     
     ds = 'UofA'
     files = glob(r"E:\ririe\rasters\testing\Total_Watershed\UofA\*.tif")
@@ -190,20 +190,27 @@ def main():
 #    tmp = zonal_stats(all_shp, zs.grid.data, affine =zs.grid.affine, raster_out=True, nodata=-9999, stats=['mean','count','sum'])
 #      
 #    
-#    ds = 'SNODAS'    
-#    files = glob(r"E:\ririe\rasters\testing\Total_Watershed\SNODAS\*.tif")
-#    
-#    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
-#    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
-#    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
-#    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds, dss_file)    
-#    
-#    ds = 'SNOTEL_IDW'
-#    files = glob(r'E:\ririe\rasters\testing\Total_Watershed\SNOTEL_IDW\*.tif')
-#    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
-#    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
-#    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1) for grid in glist)
-#    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds+'_grid_res', dss_file)    
+    ds = 'SNODAS'    
+    files = glob(r"E:\ririe\rasters\testing\Total_Watershed\SNODAS\*.tif")
+    
+    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
+    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
+    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
+    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds, dss_file)    
+    
+    ds = 'SNOTEL_IDW'
+    files = glob(r'E:\ririe\rasters\testing\Total_Watershed\SNOTEL_IDW\*.tif')
+    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
+    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
+    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1) for grid in glist)
+    snotel_sbasin, snotel_tbasin = zstat2dss(zs_list, basin, ds+'_grid_res', dss_file)    
+    
+    ds = 'SNOTEL_NEW_ELEV_IDW'
+    files = glob(r"E:\ririe\rasters\SNOTEL_GRIDS\IDW_NEW_ELEV\*.tif")
+    ts = ParseTS(files,'%Y-%m-%d', month_start=9, month_end=6)
+    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
+    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1) for grid in glist)
+    snotel_new_sbasin, snotel_new_tbasin = zstat2dss(zs_list, basin, ds+'_grid_res', dss_file)    
 #    
 #    ds = 'SNOTEL_IDW_5000'
 #    files = glob(r'E:\ririe\rasters\SNOTEL_GRIDS\IDW_5000\*.tif')
@@ -213,9 +220,9 @@ def main():
 #    snodas_sbasin, snodas_tbasin = zstat2dss(zs_list, basin, ds+'_grid_res', dss_file)    
     
     
-    for grid in glist:
-        break
-        a = get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e-3)
+#    for grid in glist:
+#        break
+#        a = get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e-3)
 #        
 
     
