@@ -17,7 +17,7 @@ import numpy as np
 import time
 from features.utils import zstat2dss
 import pandas as pd
-import sys, getopt
+from argparse import ArgumentParser
 
 class Zonal_Stat(object):
     def __init__(self, basin_gdf, sbasin_gdf, grid, oRoot, ds, basin, m_conv):
@@ -182,9 +182,7 @@ def get_zs(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv=1):
 
 
 
-def main(basin_shp,sbasin_shp,ds,dss_file,oRoot,basin, dtfmt, m_conv):
-
-
+def main(basin_shp,sbasin_shp,ds,dss_file,oRoot,basin, dtfmt, m_conv, fpath):
 
     basin_gdf = gpd.read_file(basin_shp)
     basin_gdf = check_crs(basin_gdf)
@@ -193,17 +191,15 @@ def main(basin_shp,sbasin_shp,ds,dss_file,oRoot,basin, dtfmt, m_conv):
     sbasin_gdf = gpd.read_file(sbasin_shp)
     sbasin_gdf = check_crs(sbasin_gdf)
     sbasin_gdf.columns = sbasin_gdf.columns.str.lower()
-    #sbasin_gdf.loc[:,'Name'] = ['Total_Watershed_as_sbasin']
 
+    files = glob(fpath + os.sep + '*.tif')
 
+    assert len(files)> 1, "Input Raster Directory {0} is empty".format(fpath)
 
-
-    files = glob(fpath)
-
-    ts = ParseTS(files,dtfmt, month_start=9, month_end=6)
-    glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
-    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
-    uofa_sbasin, uofa_tbasin =zstat2dss(zs_list, basin, ds,dss_file)
+    # ts = ParseTS(files,dtfmt, month_start=9, month_end=6)
+    # glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
+    # zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
+    # uofa_sbasin, uofa_tbasin =zstat2dss(zs_list, basin, ds,dss_file)
 
 #    #checking area
 #    zs = zs_list[2324]
@@ -309,62 +305,34 @@ def main(basin_shp,sbasin_shp,ds,dss_file,oRoot,basin, dtfmt, m_conv):
 
 if __name__ == '__main__':
 
-    argv = sys.argv[1:]
-    #print(argv)
-    try:
-        opts, args = getopt.getopt(argv,"ha:b:c:d:e:f:g:j:i:")
-    except getopt.GetoptError:
-        print('python pygrid2ts.py -a basin_shapefile -b subbasin_shapefile -c datasource -d raster_dir -e dss_file_path -f outut_raster_directory -g basin_name -j dtfmt -i meter_conversion')
-        sys.exit(2)
+    #python pygrid2ts.py --basin-shp "E:\ririe\shp\total_watershed_dissolved.shp" --sbasin-shp "E:\ririe\shp\total_watershed.shp" --ds SONDAS --raster-dir "E:\SNODAS" --dss "E:\ritie\output_timeseries.dss" --oroot "E:\ririe\beta" --bname RIRIE --dtfmt %Y%m%d --mconv 1000.0
 
-    for opt, arg in opts:
-        if opt == '-h':
-            print(r'Example usage:python pygrid2ts.py -a "E:\ririe\shp\total_watershed_dissolved.shp" -b "E:\ririe\shp\total_watershed.shp" -c SNODAS -d "E:\snodas" -e "E:\ririe\NEW_ELEV.dss" -f "E:\ririe\beta" -g RIRIE -j "%Y%m%d" -i 1000')
-            sys.exit()
-        elif opt in ("-a"):
-            basin_shp = arg
-        elif opt in ("-b"):
-            sbasin_shp = arg
-        elif opt in ("-c"):
-            ds = arg
-        elif opt in ("-d"):
-            fpath = arg
-        elif opt in ("-e"):
-            dss_file = arg
-        elif opt in ("-f"):
-            oRoot = arg
-        elif opt in ("-g"):
-            basin = arg
-        elif opt in ("-j"):
-            dtfmt = arg
-        elif opt in ("-i"):
-            m_conv = arg
+    parser = ArgumentParser(description='Zonal Statistic Software to Create DSS Time Series',
+                            usage = "python pygrid2ts.py --basin-shp {0} --sbasin-shp {1} --ds {2} --raster-dir {3} --dss {4} --oroot {5} --bname RIRIE --dtfmt {6} --mconv {7}".format("total_watershed_dissolved.shp","total_watershed.shp", "SONDAS","snodas_dir","output_timeseries.dss", "output_dir", "%%Y%%m%%d", 1000.0))
+    parser.add_argument('--basin-shp', dest='basin_shp', help='Dissolved Basin Shapefile', type=str )
+    parser.add_argument('--sbasin-shp', dest='sbasin_shp', help='Sub Basin Shapefile', type=str )
+    parser.add_argument('--ds', dest='ds', help='Raster Datasource', type=str )
+    parser.add_argument('--raster-dir', dest='fpath', help='Directory for rasters to be processed', type=str )
+    parser.add_argument('--dss', dest='dss_file', help='Path to Output DSS file', type=str )
+    parser.add_argument('--oroot', dest='oRoot', help='Output Directory for Basin Rasters', type=str )
+    parser.add_argument('--bname', dest='basin', help='Basin Name', type=str )
+    parser.add_argument('--dtfmt', dest='dtfmt', help='strftime Date Format', type=str )
+    parser.add_argument('--mconv', dest='m_conv', help='Converstion Factor for Input Rasters to Meters ', type=float )
 
-    m_conv = float(m_conv)
+    a = parser.parse_args()
+    print(a.basin_shp)
+    assert os.path.exists(a.basin_shp), "Basin Shapefile {1} not found".format(a.basin_shp)
+    print(a.sbasin_shp)
+    assert os.path.exists(a.sbasin_shp), "Subbasin Shapefile {1} not found".format(a.sbasin_shp)
+    print(a.ds)
+    print(a.dss_file)
+    if os.path.exists(a.dss_file):
+        print('Output DSS file {0} exists'.format(a.dss_file))
+    else:
+        print("Will Create new DSS file: {0}".format(a.dss_file))
+    print(a.oRoot)
+    print(a.basin)
+    print(a.dtfmt)
+    print(a.m_conv)
 
-    print(basin_shp)
-    print(sbasin_shp)
-    print(ds)
-    print(dss_file)
-    print(oRoot)
-    print(basin)
-    print(dtfmt)
-    print(m_conv)
-
-
-    #
-    # basin = 'RIRIE'
-    # oRoot = r"E:\ririe\rasters\new_elev"
-    # basin_shp=r"E:\ririe\NEW_ELEV.dss"
-    # sbasin_shp=r"E:\ririe\shp\total_watershed_dissolved.shp"
-    # ds = 'SNODAS'
-    # dss_file =
-    # fpath = r"E:\ririe\rasters\testing\Total_Watershed\UofA\*.tif"
-    # m_conv = 1e3
-    # dtfmt = '%Y-%m-%d'
-    # m_conv = 1e3
-
-
-
-
-    #main(basin_shp,sbasin_shp,ds,dss_file,oRoot,basin, dtfmt, m_conv)
+    main(a.basin_shp,a.sbasin_shp,a.ds,a.dss_file,a.oRoot,a.basin, a.dtfmt, a.m_conv, a.fpath)
