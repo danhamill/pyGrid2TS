@@ -28,25 +28,29 @@ class Zonal_Stat(object):
 
         Parameters
         ----------
-        basin_gdf : type
-            Description of parameter `basin_gdf`.
+        basin_gdf : GeoDataFrame
+            Basin Shapefile GeoDataFrame mush have a name attribute
+            Only one feature in shapefile
         sbasin_gdf : type
-            Description of parameter `sbasin_gdf`.
-        grid : type
-            Description of parameter `grid`.
-        oRoot : type
-            Description of parameter `oRoot`.
-        ds : type
-            Description of parameter `ds`.
-        basin : type
-            Description of parameter `basin`.
+            Subbasin Shapefile GeoDataFrame mush have a name attribute
+        grid : Grid
+            Grid Class
+        oRoot : str
+            File path to save basin rasters to
+            If directory doesn't exist, it will be made
+        ds : str
+            Data set source (e.g. SONDAS)
+            Used for file saving and Part A of dss record
+        basin : str
+            Basin name
+            Used for file saving and Part E of dss record
         m_conv : type
-            Description of parameter `m_conv`.
+            Converstion from input raster units to meters
 
         Returns
         -------
-        type
-            Description of returned object.
+
+        None
 
         """
         self.basin = basin
