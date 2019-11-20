@@ -2,3 +2,6 @@ features\__pycache__\*.pyc
 .spyproject
 *.pyc
 .idea/
+features/__pycache__/__init__.cpython-37.pyc
+features/__pycache__/grid.cpython-37.pyc
+features/__pycache__/timeseries.cpython-37.pyc
