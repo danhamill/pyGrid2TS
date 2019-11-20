@@ -203,8 +203,8 @@ def main(a):
     glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
     zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
     sbasin, tbasin =zstat2dss(zs_list, basin, ds,dss_file)
-    sbasin.to_csv(oRoot + os.sep + "sbasin_zonal_stats.csv")
-    tbasin.to_csv(oRoot + os.sep + "tbasin_zonal_stats.csv")
+    sbasin.to_csv(oRoot + os.sep + ds + "_sbasin_zonal_stats.csv")
+    tbasin.to_csv(oRoot + os.sep + ds + "_tbasin_zonal_stats.csv")
 #    #checking area
 #    zs = zs_list[2324]
 #    shp1 = gpd.read_file(r"E:\ririe\shp\total_watershed.shp")
