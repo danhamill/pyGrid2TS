@@ -131,7 +131,6 @@ class Zonal_Stat(object):
         zs = zonal_stats(self.sbasin_gdf, self.grid.data, affine = self.grid.affine, raster_out=True,nodata=-9999, all_touched=False)
 
         stuff = zs[0]
-        print (stuff)
         if np.float32  == stuff['mini_raster_array'].dtype:
             raster_dtype = rasterio.dtypes.float32
             array_dtype = 'float32'
@@ -312,21 +311,21 @@ if __name__ == '__main__':
 
     #python pygrid2ts.py --basin-shp "E:\ririe\shp\total_watershed_dissolved.shp" --sbasin-shp "E:\ririe\shp\total_watershed.shp" --ds SONDAS --raster-dir "E:\SNODAS" --dss "E:\ritie\output_timeseries.dss" --oroot "E:\ririe\beta" --bname RIRIE --dtfmt %Y%m%d --mconv 1000.0
 
-    # parser = ArgumentParser(description='Zonal Statistic Software to Create DSS Time Series',
-    #                         usage = "python pygrid2ts.py --basin-shp {0} --sbasin-shp {1} --ds {2} --raster-dir {3} --dss {4} --oroot {5} --bname RIRIE --dtfmt {6} --mconv {7}".format("total_watershed_dissolved.shp","total_watershed.shp", "SONDAS","snodas_dir","output_timeseries.dss", "output_dir", "%%Y%%m%%d", 1000.0))
-    # parser.add_argument('--basin-shp', dest='basin_shp', help='Dissolved Basin Shapefile', type=str )
-    # parser.add_argument('--sbasin-shp', dest='sbasin_shp', help='Sub Basin Shapefile', type=str )
-    # parser.add_argument('--ds', dest='ds', help='Raster Datasource', type=str )
-    # parser.add_argument('--raster-dir', dest='fpath', help='Directory for rasters to be processed', type=str )
-    # parser.add_argument('--dss', dest='dss_file', help='Path to Output DSS file', type=str )
-    # parser.add_argument('--oroot', dest='oRoot', help='Output Directory for Basin Rasters', type=str )
-    # parser.add_argument('--bname', dest='basin', help='Basin Name', type=str )
-    # parser.add_argument('--dtfmt', dest='dtfmt', help='strftime Date Format', type=str )
-    # parser.add_argument('--mconv', dest='m_conv', help='Converstion Factor for Input Rasters to Meters ', type=float )
-    #
-    # a = parser.parse_args()
+    parser = ArgumentParser(description='Zonal Statistic Software to Create DSS Time Series',
+                            usage = "python pygrid2ts.py --basin-shp {0} --sbasin-shp {1} --ds {2} --raster-dir {3} --dss {4} --oroot {5} --bname RIRIE --dtfmt {6} --mconv {7}".format("total_watershed_dissolved.shp","total_watershed.shp", "SONDAS","snodas_dir","output_timeseries.dss", "output_dir", "%%Y%%m%%d", 1000.0))
+    parser.add_argument('--basin-shp', dest='basin_shp', help='Dissolved Basin Shapefile', type=str )
+    parser.add_argument('--sbasin-shp', dest='sbasin_shp', help='Sub Basin Shapefile', type=str )
+    parser.add_argument('--ds', dest='ds', help='Raster Datasource', type=str )
+    parser.add_argument('--raster-dir', dest='fpath', help='Directory for rasters to be processed', type=str )
+    parser.add_argument('--dss', dest='dss_file', help='Path to Output DSS file', type=str )
+    parser.add_argument('--oroot', dest='oRoot', help='Output Directory for Basin Rasters', type=str )
+    parser.add_argument('--bname', dest='basin', help='Basin Name', type=str )
+    parser.add_argument('--dtfmt', dest='dtfmt', help='strftime Date Format', type=str )
+    parser.add_argument('--mconv', dest='m_conv', help='Converstion Factor for Input Rasters to Meters ', type=float )
 
-    a = argparse.Namespace(basin='RIRIE', basin_shp='E:\\ririe\\shp\\total_watershed_dissolved.shp', ds='SONDAS', dss_file='E:\\ritie\\output_timeseries.dss', dtfmt='%Y%m%d', fpath='E:\\SNODAS', m_conv=1000.0, oRoot='E:\\ririe\\beta', sbasin_shp='E:\\ririe\\shp\\total_watershed.shp')
+    a = parser.parse_args()
+
+    #a = argparse.Namespace(basin='RIRIE', basin_shp='E:\\ririe\\shp\\total_watershed_dissolved.shp', ds='SONDAS', dss_file='E:\\ritie\\output_timeseries.dss', dtfmt='%Y%m%d', fpath='E:\\SNODAS', m_conv=1000.0, oRoot='E:\\ririe\\beta', sbasin_shp='E:\\ririe\\shp\\total_watershed.shp')
     print(a)
     print(a.basin_shp)
     assert os.path.exists(a.basin_shp), "Basin Shapefile {1} not found".format(a.basin_shp)
