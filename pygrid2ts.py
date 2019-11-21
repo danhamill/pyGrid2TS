@@ -199,13 +199,14 @@ def main(a):
     sbasin_gdf.columns = sbasin_gdf.columns.str.lower()
 
     files = glob(fpath + os.sep + '*.tif')
-
+    date_util(files[0])
+    
     assert len(files)> 1, "Input Raster Directory {0} is empty".format(fpath)
     assert isinstance(date_util(files[0]), datetime.datetime), "Date format {0} could not be found in raster {1}".format(dtfmt, files[0])
 
     ts = ParseTS(files,dtfmt, month_start=9, month_end=6)
     glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
-    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, 1e3) for grid in glist)
+    zs_list = Parallel(n_jobs=-1, verbose = 10)(delayed(get_zs)(basin_gdf, sbasin_gdf, grid, oRoot,ds, basin, m_conv) for grid in glist)
     sbasin, tbasin =zstat2dss(zs_list, basin, ds,dss_file)
     sbasin.to_csv(oRoot + os.sep + ds + "_sbasin_zonal_stats.csv")
     tbasin.to_csv(oRoot + os.sep + ds + "_tbasin_zonal_stats.csv")
@@ -329,7 +330,7 @@ if __name__ == '__main__':
 
     a = parser.parse_args()
 
-    #a = argparse.Namespace(basin='RIRIE', basin_shp='E:\\ririe\\shp\\total_watershed_dissolved.shp', ds='SONDAS', dss_file='E:\\ritie\\output_timeseries.dss', dtfmt='%Y%m%d', fpath='E:\\SNODAS', m_conv=1000.0, oRoot='E:\\ririe\\beta', sbasin_shp='E:\\ririe\\shp\\total_watershed.shp')
+    #a = argparse.Namespace(basin='RIRIE', basin_shp='E:\\ririe\\shp\\total_watershed_dissolved.shp', ds='IDW_5000', dss_file='E:\\ririe\\ALL_SWE_PRODUCTS.dss', dtfmt='%Y%m%d', fpath='E:\\ririe\\rasters\\SNOTEL_GRIDS\\2019_11_20\\IDW\\SWE', m_conv=1.0, oRoot='E:\\ririe\\beta', sbasin_shp='E:\\ririe\\shp\\total_watershed.shp')
     #print(a)
     print(a.basin_shp)
     assert os.path.exists(a.basin_shp), "Basin Shapefile {1} not found".format(a.basin_shp)

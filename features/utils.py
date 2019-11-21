@@ -34,7 +34,7 @@ def check_crs(gdf):
     return gdf
 
 
-def date_util(name,dtfmt='%Y%d%m'):
+def date_util(name,dtfmt='%Y%m%d'):
     '''
     Utility to find dates from complex strings:
     Requires self.dtfmt to be correcly specified
@@ -55,8 +55,8 @@ def date_util(name,dtfmt='%Y%d%m'):
         result = datetime.strptime(date_str.group(), dtfmt)
     except:
         print("Could not parse date format {0} for {1}".format(dtfmt, name))
-        sys.exit()
-    return datetime.strptime(date_str.group(), dtfmt)
+        raise RuntimeError('halt')
+    return result
 
 
 def zstat2dss(zs_list, basin, ds, dss_file):
