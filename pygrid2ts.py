@@ -201,7 +201,7 @@ def main(a):
     files = glob(fpath + os.sep + '*.tif')
 
     assert len(files)> 1, "Input Raster Directory {0} is empty".format(fpath)
-    assert isinstance(date_util(files[0], dtfmt), datetime.datetime), "Date format {0} could not be found in raster {1}".format(dtfmt, files[0])
+    assert isinstance(date_util(files[0]), datetime.datetime), "Date format {0} could not be found in raster {1}".format(dtfmt, files[0])
 
     ts = ParseTS(files,dtfmt, month_start=9, month_end=6)
     glist = Parallel(n_jobs=-1, verbose=10)(delayed(get_grids)(fname, date) for fname, date in zip(ts.ts.flist, ts.ts.dates))
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     a = parser.parse_args()
 
     #a = argparse.Namespace(basin='RIRIE', basin_shp='E:\\ririe\\shp\\total_watershed_dissolved.shp', ds='SONDAS', dss_file='E:\\ritie\\output_timeseries.dss', dtfmt='%Y%m%d', fpath='E:\\SNODAS', m_conv=1000.0, oRoot='E:\\ririe\\beta', sbasin_shp='E:\\ririe\\shp\\total_watershed.shp')
-    print(a)
+    #print(a)
     print(a.basin_shp)
     assert os.path.exists(a.basin_shp), "Basin Shapefile {1} not found".format(a.basin_shp)
     print(a.sbasin_shp)

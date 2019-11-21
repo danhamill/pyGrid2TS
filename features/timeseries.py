@@ -32,8 +32,7 @@ class TimeSeries(object):
 
 
     def import_ts(self):
-        names = ['-'.join(os.path.split(i)[1].split('.')[0].split('_')) for i in self.flist]
-        dates =[date_util(i,self.dtfmt) for i in names]
+        dates =[date_util(i,self.dtfmt) for i in self.flist]
 
         #no subseting of data
         if not self.month_start and not self.month_end:

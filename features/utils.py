@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from pydsstools.heclib.dss import HecDss
 from pydsstools.core import TimeSeriesContainer
-
+import sys
 
 def test_func():
     return 'test_return'
@@ -34,15 +34,14 @@ def check_crs(gdf):
     return gdf
 
 
-def date_util(name,dtfmt):
+def date_util(name,dtfmt='%Y%d%m'):
     '''
     Utility to find dates from complex strings:
     Requires self.dtfmt to be correcly specified
     '''
     parts = dtfmt.split('%')[1:]
-
-
     fname = ''.join(os.path.split(name)[1].split('.')[0].split('_'))
+    fname = ''.join(os.path.split(fname)[1].split('.')[0].split('-'))
     str2regex = {'Y':'[1-2][0-9][0-9][0-9]',
         'm':'[0-1][0-9]',
         'd':'[0-3][0-9]',
@@ -52,6 +51,11 @@ def date_util(name,dtfmt):
 
     regex_string = ''.join([str2regex[i] for i in parts])
     date_str = re.search(regex_string,fname)
+    try:
+        result = datetime.strptime(date_str.group(), dtfmt)
+    except:
+        print("Could not parse date format {0} for {1}".format(dtfmt, name))
+        sys.exit()
     return datetime.strptime(date_str.group(), dtfmt)
 
 
