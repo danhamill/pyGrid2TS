@@ -15,21 +15,18 @@ Welcome to pyGrid2TS, the python package that can process gridded datasets in to
 ## Useage
 To use this command line utility, it is reccomended you set up a virual environment will all of the required dependencies.  If you use anaconda:
 
-```
+```cmd
 conda create --name pygrid python=3.7
+conda activate pygrid
 conda install -c conda-forge gdal rasterio fiona shapely fiona
 conda install pandas joblib 
 pip install geopandas
-
 ```
-
 Clone the repository
 
-```
-
-cd <to desired cloning directory
+```cmd
+cd <to desired cloning directory>
 git clone https://github.com/danhamill/pyGrid2TS.git
-
 ```
 
 ### Inputs
