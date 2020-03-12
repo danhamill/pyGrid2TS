@@ -9,6 +9,7 @@ Welcome to pyGrid2TS, the python package that can process gridded datasets in to
 - geopandas
 - joblib
 - pydsstools
+- pandas
 
 
 ## Useage
