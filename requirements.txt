@@ -1,0 +1,7 @@
+numpy==1.18.1
+rasterio==1.0.24
+rasterstats==0.14.0
+joblib==0.14.1
+pydsstools==1.4
+pandas==1.0.1
+geopandas==0.7.0
