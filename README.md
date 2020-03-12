@@ -12,8 +12,26 @@ Welcome to pyGrid2TS, the python package that can process gridded datasets in to
 
 
 ## Useage
+To use this command line utility, it is reccomended you set up a virual environment will all of the required dependencies.  If you use anaconda:
 
-### Input
+```
+conda create --name pygrid python=3.7
+conda install -c conda-forge gdal rasterio fiona shapely fiona
+conda install pandas joblib 
+pip install geopandas
+
+```
+
+Clone the repository
+
+```
+
+cd <to desired cloning directory
+git clone https://github.com/danhamill/pyGrid2TS.git
+
+```
+
+### Inputs
 
 1. Directory of daily SWE surfaces
 2. Shapefile of watershed boundary
@@ -22,7 +40,7 @@ Welcome to pyGrid2TS, the python package that can process gridded datasets in to
 ### Output
 
 1. Daily clipped raster for watershed and subbasin boundaries
-2. DSS file
+2. DSS file with procesed time series
 
 
 ```python
