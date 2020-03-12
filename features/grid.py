@@ -32,6 +32,7 @@ class Grid(object):
         with rasterio.open(self.fpath) as ds:
             self.crs = ds.crs
             self.driver = ds.driver
+            self.data = ds.read(1)
 
 
 def get_grids(fname, date, dtfmt = '%Y%m%d'):
