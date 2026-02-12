@@ -4,4 +4,4 @@ rasterstats==0.14.0
 joblib==0.14.1
 pydsstools==1.4
 pandas==1.0.1
-geopandas==0.7.0
+geopandas==1.1.2
